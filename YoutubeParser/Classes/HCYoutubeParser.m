@@ -88,19 +88,25 @@
 @implementation HCYoutubeParser
 
 + (NSString *)youtubeIDFromYoutubeURL:(NSURL *)youtubeURL {
-    NSString *youtubeID = nil;
     
-    if ([youtubeURL.host isEqualToString:@"youtu.be"]) {
-        youtubeID = [[youtubeURL pathComponents] objectAtIndex:1];
-    } else if([youtubeURL.absoluteString rangeOfString:@"www.youtube.com/embed"].location != NSNotFound){
-        youtubeID = [[youtubeURL pathComponents] objectAtIndex:2];
-    } else if([youtubeURL.host isEqualToString:@"youtube.googleapis.com"] ||
-              [[youtubeURL.pathComponents firstObject] isEqualToString:@"www.youtube.com"]) {
-        youtubeID = [[youtubeURL pathComponents] objectAtIndex:2];
-    } else {
-        youtubeID = [[[youtubeURL dictionaryForQueryString] objectForKey:@"v"] objectAtIndex:0];
-    }
+    NSString *youtubeID = [self extractYoutubeIdFromLink:youtubeURL.absoluteString];
+    
     return youtubeID;
+}
+
++ (NSString *)extractYoutubeIdFromLink:(NSString *)link {
+    
+    NSString *regexString = @"((?<=(v|V)/)|(?<=be/)|(?<=(\\?|\\&)v=)|(?<=embed/))([\\w-]++)";
+    NSRegularExpression *regExp = [NSRegularExpression regularExpressionWithPattern:regexString
+                                                                            options:NSRegularExpressionCaseInsensitive
+                                                                              error:nil];
+    
+    NSArray *array = [regExp matchesInString:link options:0 range:NSMakeRange(0,link.length)];
+    if (array.count > 0) {
+        NSTextCheckingResult *result = array.firstObject;
+        return [link substringWithRange:result.range];
+    }
+    return nil;
 }
 
 + (NSDictionary *)h264videosWithYoutubeID:(NSString *)youtubeID {
